@@ -48,7 +48,7 @@ app.get("/ytdl", (req, res) => {
     const args = [
         `https://www.youtube.com/watch?v=${videoId}`,
         `-f ${formatArg}`,
-        `-o %(title)s.%(ext)s`,
+        `-o "%(title)s.%(ext)s"`,
         `-P ./ytdlp/`
     ];
 
