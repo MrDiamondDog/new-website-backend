@@ -3,7 +3,7 @@ import child_process from "child_process";
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'fs';
-import { Jimp } from "jimp";
+import "dotenv/config";
 
 export const app = express();
 
@@ -76,19 +76,60 @@ app.get("/ytdl", (req, res) => {
     }, 1000);
 });
 
-app.get("/jpg-to-bmp", async (req, res) => {
-    const params = req.query;
+app.get("/spotify-currently-playing", async (req, res) => {
+    if (req.headers.authorization !== process.env.SPOTIFY_API_SECRET)
+        return void res.status(403).send("Unauthorized");
 
-    if (!params || !params.url)
-        return void res.status(400).send("Missing parameters");
+    const tokens = JSON.parse(fs.readFileSync("spotify-tokens.json", "utf-8"));
+    const access_token = tokens.access_token;
 
-    const url = params.url as string;
-    
-    const imageRes = await fetch(url).then(r => r.arrayBuffer());
-    const image = await Jimp.read(Buffer.from(imageRes));
-    
-    res.setHeader("Content-Type", "image/bmp")
-        .send(image.bitmap.data);
+    if (!access_token || tokens.expires_at < Date.now()) {
+        console.log("Refreshing tokens");
+        const newTokens = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: `Basic ${Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString("base64")}`
+            },
+            // @ts-ignore
+            body: new URLSearchParams({
+                grant_type: "refresh_token",
+                refresh_token: tokens.refresh_token
+            }),
+        }).then(res => res.json());
+
+        if (newTokens.error)
+            return void res.status(500).json(newTokens);
+
+        fs.writeFileSync("spotify-tokens.json", JSON.stringify({
+            access_token: newTokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_at: Date.now() + newTokens.expires_in * 1000
+        }));
+    }
+
+    const currentlyPlayingRes = await fetch("https://api.spotify.com/v1/me/player/", {
+        headers: {
+            "Authorization": `Bearer ${tokens.access_token}`
+        }
+    })
+
+    if (currentlyPlayingRes.status === 204)
+        return void res.status(204);
+
+    const currentlyPlaying = await currentlyPlayingRes.json();
+
+    if (currentlyPlaying.error)
+        return void res.status(500).json(currentlyPlaying);
+
+    res.json({
+        name: currentlyPlaying.item.name,
+        artist: currentlyPlaying.item.artists.map((a: any) => a.name).join(", "),
+        album: currentlyPlaying.item.album.name,
+        duration_ms: currentlyPlaying.item.duration_ms,
+        progress_ms: currentlyPlaying.progress_ms,
+        is_playing: currentlyPlaying.is_playing,
+    })
 });
 
 export default function startHTTP() {
