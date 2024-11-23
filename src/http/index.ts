@@ -3,6 +3,7 @@ import child_process from "child_process";
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'fs';
+import { Jimp } from "jimp";
 
 export const app = express();
 
@@ -73,6 +74,21 @@ app.get("/ytdl", (req, res) => {
     setTimeout(() => {
         fs.unlinkSync(filename);
     }, 1000);
+});
+
+app.get("/jpg-to-bmp", async (req, res) => {
+    const params = req.query;
+
+    if (!params || !params.url)
+        return void res.status(400).send("Missing parameters");
+
+    const url = params.url as string;
+    
+    const imageRes = await fetch(url).then(r => r.arrayBuffer());
+    const image = await Jimp.read(Buffer.from(imageRes));
+    
+    res.setHeader("Content-Type", "image/bmp")
+        .send(image.bitmap.data);
 });
 
 export default function startHTTP() {
