@@ -115,7 +115,7 @@ app.get("/spotify-currently-playing", async (req, res) => {
     })
 
     if (currentlyPlayingRes.status === 204)
-        return void res.status(204);
+        return void res.status(204).send("No content");
 
     const currentlyPlaying = await currentlyPlayingRes.json();
 
