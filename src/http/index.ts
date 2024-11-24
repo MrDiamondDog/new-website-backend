@@ -14,6 +14,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(express.static("public"));
+
 function ytdlp(...args: string[]) {
     return child_process.execSync(`yt-dlp ${args.join(" ")} --no-exec`).toString();
 }
