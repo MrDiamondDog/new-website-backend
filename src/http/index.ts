@@ -4,6 +4,7 @@ import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'fs';
 import "dotenv/config";
+import { tuyaAuth, tuyaDevice, tuyaReq } from "./tuya";
 
 export const app = express();
 
@@ -79,7 +80,7 @@ app.get("/ytdl", (req, res) => {
 });
 
 app.get("/spotify-currently-playing", async (req, res) => {
-    if (req.headers.authorization !== process.env.SPOTIFY_API_SECRET)
+    if (req.headers.authorization !== process.env.API_SECRET)
         return void res.status(403).send("Unauthorized");
 
     const tokens = JSON.parse(fs.readFileSync("spotify-tokens.json", "utf-8"));
@@ -134,8 +135,34 @@ app.get("/spotify-currently-playing", async (req, res) => {
     })
 });
 
-export default function startHTTP() {
+app.get("/lights", async (req, res) => {
+    if (req.headers.authorization !== process.env.API_SECRET)
+        return void res.status(403).send("Unauthorized");
+    
+    // state = on/off
+    // h, s, v = 0-360
+    // must have state or all 3 h, s, v
+    if (!req.query.state && (!req.query.h || !req.query.s || !req.query.v))
+        return void res.status(400).send("Missing parameters");
+
+    res.status(200).send("ok");
+    
+    if (req.query.state) {
+        const on = req.query.state === "true";
+        await tuyaDevice("switch_led", on);
+    }
+
+    if (req.query.h && req.query.s && req.query.v) {
+        const h = parseInt(req.query.h as string);
+        const s = parseInt(req.query.s as string);
+        const v = parseInt(req.query.v as string);
+        await tuyaDevice("colour_data_v2", { h, s, v });
+    }
+});
+
+export default async function startHTTP() {
     app.listen(8000, () => {
         console.log("HTTP server started on port 8000");
     });
+    await tuyaAuth();
 }
