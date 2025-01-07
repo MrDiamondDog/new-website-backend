@@ -46,33 +46,50 @@ app.get("/lights", async (req, res) => {
 });
 
 app.post('/webhook', async (req, res) => {
-    const sig = req.headers['x-hub-signature-256'] || '';
-    const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET!);
-    hmac.update(JSON.stringify(req.body));
-    const digest = `sha256=${hmac.digest('hex')}`;
-    
-    if (sig !== digest) {
-        console.error('Invalid signature');
-        return void res.status(403).send('Invalid signature');
-    }
+    try {
+        // Ensure the request body is properly received
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return void res.status(400).send('Invalid or missing request body');
+        }
 
-    if (req.body.ref && req.body.ref === 'refs/heads/master') {
-        console.log('Pulling latest changes...');
-        exec('git pull && systemctl restart website-backend', { cwd: '~/new-website-backend' }, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error pulling changes: ${error.message}`);
-                return res.status(500).send('Error pulling changes');
-            }
-            if (stderr) {
-                console.error(`stderr: ${stderr}`);
-            }
-            console.log(`stdout: ${stdout}`);
-        });
-    } else {
-        res.status(400).send('Invalid branch or request');
-    }
+        // Validate the HMAC signature
+        const sig = req.headers['x-hub-signature-256']; // GitHub's signature header
+        if (!sig) {
+            console.error('No signature found in request');
+            return void res.status(403).send('No signature provided');
+        }
 
-    res.status(200).send('ok');
+        const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET!);
+        const bodyData = JSON.stringify(req.body); // Convert the request body to a string
+        hmac.update(bodyData);
+        const digest = `sha256=${hmac.digest('hex')}`;
+
+        if (sig !== digest) {
+            console.error('Invalid signature');
+            return void res.status(403).send('Invalid signature');
+        }
+
+        // Proceed with git pull and restart if branch matches
+        if (req.body.ref && req.body.ref === 'refs/heads/master') { // Adjust branch name as needed
+            console.log('Pulling latest changes...');
+            exec('git pull && systemctl restart website-backend', { cwd: '~/new-website-backend/' }, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Error pulling changes: ${error.message}`);
+                    return void res.status(500).send('Error pulling changes');
+                }
+                if (stderr) {
+                    console.error(`stderr: ${stderr}`);
+                }
+                console.log(`stdout: ${stdout}`);
+                res.status(200).send('Update successful');
+            });
+        } else {
+            res.status(400).send('Invalid branch or request');
+        }
+    } catch (error: any) {
+        console.error(`Unexpected error: ${error.message}`);
+        res.status(500).send('Internal server error');
+    }
 });
 
 export default async function startHTTP() {
