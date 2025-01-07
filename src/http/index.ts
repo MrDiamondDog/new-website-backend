@@ -47,6 +47,7 @@ app.get("/lights", async (req, res) => {
 
 app.post('/webhook', async (req, res) => {
     try {
+        console.log('Received webhook:', req.body);
         // Ensure the request body is properly received
         if (!req.body || Object.keys(req.body).length === 0) {
             return void res.status(400).send('Invalid or missing request body');
