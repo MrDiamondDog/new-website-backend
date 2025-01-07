@@ -76,7 +76,7 @@ app.post('/webhook', async (req, res) => {
         // Proceed with git pull and restart if branch matches
         if (req.body.ref && req.body.ref === 'refs/heads/master') { // Adjust branch name as needed
             console.log('Pulling latest changes...');
-            exec(`${gitPath} pull && ${systemctlPath} restart website-backend`, { cwd: '/home/ubuntu/new-website-backend/' }, (error, stdout, stderr) => {
+            exec(`${gitPath} pull && sudo ${systemctlPath} restart website-backend`, { cwd: '/home/ubuntu/new-website-backend/' }, (error, stdout, stderr) => {
                 if (error) {
                     console.error(`Error pulling changes: ${error.message}`);
                     return void res.status(500).send('Error pulling changes');
