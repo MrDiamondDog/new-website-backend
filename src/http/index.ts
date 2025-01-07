@@ -67,11 +67,12 @@ app.post('/webhook', async (req, res) => {
                 console.error(`stderr: ${stderr}`);
             }
             console.log(`stdout: ${stdout}`);
-            res.status(200).send('Update successful');
         });
     } else {
         res.status(400).send('Invalid branch or request');
     }
+
+    res.status(200).send('ok');
 });
 
 export default async function startHTTP() {
