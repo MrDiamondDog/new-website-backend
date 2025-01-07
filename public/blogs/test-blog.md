@@ -2,8 +2,6 @@
 
 This is a test blog post. Yay!
 
-yippie it works
-
 ## Markdown Testing
 
 - This is a list item
