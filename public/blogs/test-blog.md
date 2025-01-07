@@ -24,11 +24,13 @@ type Type = {
     thing?: any;
 }
 
-function test(test_param: Type) {
+function test(test_param: Type): Omit<Type, "thing"> {
     delete test_param.thing;
 
-    test(test_param);
+    return test_param;
 }
+
+test({thing: 'thing'});
 ```
 
 > This is a blockquote
