@@ -35,21 +35,11 @@ test({thing: 'thing'});
 
 > This is a blockquote
 
-> [!NOTE]
-> This is a note block
-
 This is ~subscript~ and this is ^superscript^
 
 This is a horizontal rule:
 
 ---
-
-This is a table:
-
-| Col 1 | Col 2 |
-|-------|-------|
-| 1     | 2     |
-| 3     | 4     |
 
 This is an inline code block: `const test = 'test';`
 
