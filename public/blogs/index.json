@@ -3,6 +3,13 @@
         "title": "Test Blog",
         "description": "This is a test blog",
         "slug": "test-blog",
-        "created": "1/5/2025"
+        "created": "1/5/2025",
+        "showInList": false
+    },
+    {
+        "title": "The vencord.lol Rabbit Hole",
+        "description": "An investigation into a fake download site",
+        "slug": "vencord.lol",
+        "created": "3/30/2024"
     }
 ]
